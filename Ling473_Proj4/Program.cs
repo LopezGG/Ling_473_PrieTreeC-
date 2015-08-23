@@ -17,10 +17,10 @@ namespace Ling473_Proj4
             int maxTarget = 0;
             string payload;
             //Create a prie tree
-            using (StreamReader sr=new StreamReader("targets"))
+            using (StreamReader sr = new StreamReader("targets"))
             {
-                string line ;
-                while ((line = sr.ReadLine()) != null) 
+                string line;
+                while ((line = sr.ReadLine()) != null)
                 {
                     line = line.ToUpper();
                     maxTarget = Math.Max(maxTarget, line.Length);
@@ -56,7 +56,7 @@ namespace Ling473_Proj4
                     StringBuilder sb = new StringBuilder(reader.ReadToEnd());
                     //for (int n = 0; n < sb.Length; n++)
                     //{
-                    //    match = SearchTree(root, sb.ToString(n,maxTarget).ToUpper());
+                    //    match = SearchTree(root, sb.ToString(n, maxTarget).ToUpper());
                     //    if (!String.IsNullOrEmpty(match))
                     //    {
                     //        Matches.Add(file, match);
@@ -107,19 +107,20 @@ namespace Ling473_Proj4
         public static DictionaryNode GetChild (DictionaryNode root,char value,string payload)
         {
             if (!root.Children.ContainsKey(value))
-                root.Children.Add(value, new DictionaryNode(value,payload));
+                root.Children.Add(value, new DictionaryNode(payload));
             return root.Children[value];
         }
 
         public static void PrintTree (DictionaryNode root)
         {
-            Console.Write(root.Nucleotide + "-");
+            
             if(!String.IsNullOrEmpty(root.Payload))
             {
                 Console.WriteLine();
             }
             foreach(KeyValuePair<char,DictionaryNode> entry in root.Children )
             {
+                Console.Write(entry.Key + "-");
                 PrintTree(entry.Value);
             }
             
