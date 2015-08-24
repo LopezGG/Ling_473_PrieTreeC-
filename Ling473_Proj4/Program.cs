@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,15 +16,22 @@ namespace Ling473_Proj4
             DictionaryNode child = new DictionaryNode();
             int i = 0;
             int maxTarget = 0;
+            int minTarget = int.MaxValue;
             string payload;
+            int count_target = 0;
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            string TargetFile = (args.Length > 0) ? @args[0] :@"/opt/dropbox/15-16/473/project4/targets"; 
             //Create a prie tree
-            using (StreamReader sr = new StreamReader("targets"))
+            using (StreamReader sr = new StreamReader(TargetFile))
             {
                 string line;
                 while ((line = sr.ReadLine()) != null)
                 {
                     line = line.ToUpper();
+                    count_target++;
                     maxTarget = Math.Max(maxTarget, line.Length);
+                    minTarget = Math.Min(minTarget, line.Length);
                     for (int x = 0; x < line.Length; x++)
                     {
                         char c = line[x];
@@ -42,30 +50,58 @@ namespace Ling473_Proj4
                 }
                 line = null;
             }
-            
+            timer.Stop();
+            Console.WriteLine("total number of targets is " + count_target);
+            Console.WriteLine("timeElapsed for building a tree : "+timer.ElapsedMilliseconds);
+
+            timer.Start();
             //Search through the prie tree
-            string folderPath = @"C:\Users\gilopez\Documents\Visual Studio 2013\Projects\Ling473_Proj4\Ling473_Proj4\TestFolder";
-            CheckDir(folderPath);
-            Dictionary<String, String> Matches = new Dictionary<String, String>();
+            string SequenceFolder = (args.Length>1) ? @args[1]: @"/opt/dropbox/15-16/473/project4/hg19-GRCh37";
+            CheckDir(SequenceFolder);
+
+            
             string match = "";
-            foreach (string file in Directory.EnumerateFiles(folderPath, "*"))
+            Dictionary<String, List<String>> Matches = new Dictionary<string, List<string>>();
+            foreach (string file in Directory.EnumerateFiles(SequenceFolder, "*"))
             {
-                
+
                 using (StreamReader reader = new StreamReader(file))
                 {
                     StringBuilder sb = new StringBuilder(reader.ReadToEnd());
-                    //for (int n = 0; n < sb.Length; n++)
-                    //{
-                    //    match = SearchTree(root, sb.ToString(n, maxTarget).ToUpper());
-                    //    if (!String.IsNullOrEmpty(match))
-                    //    {
-                    //        Matches.Add(file, match);
-                    //    }
-                    //}                 
+
+                    string fileName = Path.GetFileName(file); 
+                    int sbLength = sb.Length;
+
+                    for (int n = 0; n < sbLength; n++)
+                    {
+                        int displacement = Math.Min(sbLength - n, maxTarget);
+                        //if length of remaining sequence is less than mintarget size we can leave
+                        if(displacement<minTarget)
+                            break;
+                        match = SearchTree(root, sb.ToString(n, displacement));
+                        if (!String.IsNullOrEmpty(match))
+                        {
+                            if (Matches.ContainsKey(match))
+                                Matches[match].Add(n + "\t" + fileName);
+                            else
+                                Matches.Add(match, new List<String>(new String[] { n + "\t" + fileName }));
+                        }
+                    }                 
                 }
             }
-
-
+            
+            timer.Stop();
+            StreamWriter writer = new StreamWriter("output.txt");
+            writer.WriteLine("timeElapsed for running through the tree : " + timer.ElapsedMilliseconds);
+            foreach(KeyValuePair<String,List<String>> entry in Matches)
+            {
+                writer.WriteLine(entry.Key);
+                foreach(String s in entry.Value)
+                {
+                    writer.WriteLine(s);
+                }
+            }
+            writer.Close();
             //PrintTree(root);
             Console.WriteLine("Finished");
             Console.ReadLine();
@@ -82,7 +118,7 @@ namespace Ling473_Proj4
                 return root.Payload;
             }
             // else we have to recurse by checking if current character exists in the tree and send the remaining characters for further recursion
-            char c= testString[0];
+            Char c= Char.ToUpper(testString[0]);
             if(root.Children.ContainsKey(c))
             {
                 result = SearchTree(root.Children[c],testString.Substring(1));
